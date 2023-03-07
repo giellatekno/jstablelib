@@ -1,0 +1,11 @@
+# python virtual environment
+.venv
+
+# output from some dependency of the test framework 
+.nyc_output
+
+# generate docs site
+docs/site
+
+node_modules/
+pnpm-lock.yaml
