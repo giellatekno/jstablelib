@@ -1,16 +1,36 @@
+/**
+ * Symbol for indicating that something is empty.
+ * It's nice to be specific. Things in javascript can end up as undefined,
+ * (or sometimes maybe even null) unexpectedly, but when these utilties return
+ * this symbol, you can be sure that they really are empty, and it's not a bug
+ * elsewhere which caused the undefined or null to appear.
+ */
 export const Empty = Symbol("Empty");
 
 export class ValueError extends Error {
     constructor(msg, ...args) {
         super(msg, ...args);
+        this.name = "ValueError";
     }
 }
 
-// comparision function to sort arrays numerically (js doesn't, by default)
+/**
+ * comparision function to sort arrays numerically (js doesn't, by default)
+ */
 export const numerically = (a, b) => a - b;
 
+/**
+ * is_pojo() - "pojo = plain old javascript object".
+ * Object literals are pojos. Exotic types such as Map are not.
+ */
 export function is_pojo(obj) { return !!obj && obj.constructor === Object; }
 
+/**
+ * len() - the length (or size) of a container type which has a concept of length or sizepy
+ * Very useful for .map() and such.
+ * @example
+ *   ["a", "bb", "ccc"].map(len) === [1, 2, 3]
+ */
 export function len(obj) {
     if (obj === undefined)
         throw new TypeError("len(): object of type undefined has no length");
@@ -69,6 +89,10 @@ export function max_or(iterable, value) {
     return winner === Empty ? value : winner;
 }
 
+/**
+ * min(iterable) - find the minimum item in a sequence
+ * @param iterable
+ */
 export function min(iterable) {
     let winner = Infinity;
     let empty = true;
@@ -195,7 +219,7 @@ export function find_all_indexes(character) {
 
 /* 
  * align_columns(arrays)
- * @ arg: arrays  - array of arrays
+ * @param {number[][]} arrays
  *
  * Take an array of array, and make all
  * subarrays have equal length, such that

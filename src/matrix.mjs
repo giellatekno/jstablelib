@@ -6,6 +6,7 @@ import {
     max,
     max_or,
     pad_center,
+    enumerate,
     numerically,
     range,
     _typeof,
@@ -99,6 +100,17 @@ export class Matrix {
     set(y, x, value) { this.#boundcheck(y, x, "set"); this.#data[y][x] = new Entry(value); }
     get(y, x) { this.#boundcheck(y, x, "get"); return this.#data[y][x]; }
 
+    is_empty() {
+        for (const entry of this.entries()) {
+            // on first entry, we know it's not empty
+            return false;
+        }
+        // obviously there was no entries at this point
+        return true;
+    }
+
+    is_not_empty() { return !this.is_empty(); };
+
     // retrieve the underlying array, with all field values extracted
     as_array({ empty_treated_as = undefined } = {}) {
         return this.#data.map(columns =>
@@ -191,13 +203,29 @@ export class Matrix {
         }
     }
 
+    // return a new Matrix with only the specified rows and columns
+    slice(rows, columns) {
+        // de-dupe and sort
+        rows = [...new Set(rows)].sort(numerically);
+        columns = [...new Set(columns)].sort(numerically);
+
+        const new_matrix = new Matrix(len(rows), len(columns));
+
+        for (let [next_y, y] of enumerate(rows)) {
+            for (let [next_x, x] of enumerate(columns)) {
+                new_matrix.set(next_y, next_x, this.get(y, x).value);
+            }
+        }
+
+        return new_matrix;
+    }
+
     without_empty_rows_and_columns() {
         const entries = [...this.entries()].map(([[y, x], _value]) => [y, x]);
         const rows = [...new Set(entries.map(([y, x]) => y))].sort(numerically);
         const columns = [...new Set(entries.map(([y, x]) => x))].sort(numerically);
-        const new_matrix = new Matrix(len(rows), len(columns));
 
-        // so far so good
+        const new_matrix = this.slice(rows, columns);
 
         // read the valeus from the old matrix, and write them into the right
         // place in the new one
@@ -208,7 +236,7 @@ export class Matrix {
         for (let y of rows) {
             let next_x = 0;
             for (let x of columns) {
-                new_matrix.set(next_y, next_x, this.get(y, x).value);
+                //new_matrix.set(next_y, next_x, this.get(y, x).value);
                 new_columns[x] = next_x;
                 new_rows[y] = next_y;
                 next_x++;

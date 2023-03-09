@@ -1,5 +1,6 @@
 import {
     len,
+    _iter,
     dedent,
     ValueError,
     find_all_indexes,
@@ -41,6 +42,78 @@ export class Table {
         const data = new Matrix(height, width);
 
         return new Table(caption, data, row_headers, column_headers);
+    }
+
+    is_empty() { return this.data.is_empty(); }
+    is_not_empty() { return this.data.is_not_empty(); }
+
+    /**
+     * Return a new table with only the specified rows and columns
+     * @param {number[]} rows
+     * @param {number[]} columns
+     */
+    slice(rows, columns) {
+        const new_matrix = this.data.slice(rows, columns);
+        const new_row_headers = this.row_headers
+            .filter((header, i) => rows.includes(i));
+
+        const new_column_headers = [];
+        const despanned = despan(this.column_headers);
+        for (const ch_row of despanned) {
+            const arr = [];
+            for (const [ch_idx, ch] of enumerate(ch_row)) {
+                if (columns.includes(ch_idx)) {
+                    console.log("pushing", ch);
+                    arr.push(ch);
+                }
+            }
+            new_column_headers.push(arr);
+        }
+
+        return new Table(
+            this.caption,
+            new_matrix,
+            new_row_headers,
+            respan(new_column_headers),
+        );
+    }
+
+    as_grid_html({ screen_width }) {
+        console.log("as_grid_html().", `screen_width (${typeof screen_width})=${screen_width}`);
+
+        const additional_columns_due_to_having_row_headers = len(this.row_headers) > 0 ? 1 : 0;
+
+        let num_grid_columns = 0;
+        if (screen_width < 800) {
+            num_grid_columns = 2;
+        } else {
+            num_grid_columns = this.data.width + additional_columns_due_to_having_row_headers;
+        }
+        console.log("num_grid_columns =", num_grid_columns);
+
+        const height = this.data.height + len(this.column_headers);
+
+        const ch = this.column_headers
+            .map((ch_row, y) =>
+                ch_row.map(({ text, span }, x) => {
+                    const style = `grid-row-start: ${y + 1}; grid-row-end: span 1; grid-column-start: ${x + 1}; grid-column-end: span ${span};`;
+                    return `<div style="${style}">${text === "(-)" ? "" : text}</div>`;
+                }).join(""))
+            .join("");
+
+        // for now just the column headers
+        const contents = ch;
+        const container_styles = `
+            display: grid;
+            grid-template-columns: repeat(${num_grid_columns}, 1fr);
+            grid-template-rows: repeat(${height}, 1fr);
+        `;
+
+        return `
+            <div style="${container_styles}">
+                ${contents}
+            </div>
+        `;
     }
 
     as_console_str({
@@ -234,8 +307,8 @@ function parse_tableformat_string(fmt) {
 }
 
 
-// from [ { text: "a", span: 3 }, ... ]
-// to ["a", "a", "a"]
+// from [ [ { text: "a", span: 3 }, ...], ... ]
+// to [ ["a", "a", "a"], ... ]
 function despan(column_headers) {
     const out = [];
     for (const ch_row of column_headers) {
@@ -247,5 +320,46 @@ function despan(column_headers) {
         }
         out.push(row);
     }
+    return out;
+}
+
+// opposite of despan
+function respan(column_headers) {
+    const out = [];
+
+    // [
+    //   [ "a", "a", "a" ],
+    //   [ "A", "B", "C" ],
+    // ]
+    // -->
+    // [
+    //   [ { text: "a": span: 3 } ],
+    //   ...
+    // ]
+    for (const row of column_headers) {
+        const new_row = [];
+        let span = 1;
+        const it = _iter(row);
+        let { done, value } = it.next();
+        if (done) continue;
+        let current_value = value;
+
+        while (true) {
+            let { done, value } = it.next();
+            if (done) {
+                new_row.push({ text: current_value, span });
+                break;
+            }
+            if (value === current_value) {
+                span++;
+            } else {
+                new_row.push({ text: current_value, span });
+                current_value = value;
+                span = 1;
+            }
+        }
+        out.push(new_row);
+    }
+    
     return out;
 }
