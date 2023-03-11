@@ -1,5 +1,5 @@
 import t from "tap";
-import { AUTOEND } from "./utils.mjs";
+import { AUTOEND } from "./_utils.mjs";
 
 import { strip } from "../src/utils.mjs";
 

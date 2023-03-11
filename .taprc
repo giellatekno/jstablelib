@@ -1,1 +1,1 @@
-test-ignore: test/utils.mjs
+test-ignore: test/_utils.mjs

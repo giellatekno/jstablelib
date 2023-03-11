@@ -16,6 +16,26 @@ import {
 
 import { Matrix } from "./matrix.mjs";
 
+/**
+ * A column header.
+ * @typedef {Object} ColumnHeader
+ * @property {string} text - the text that is displayed
+ * @property {number} number - how many columns this header spans
+ */
+
+/**
+ * A column header row
+ * @typedef {Array<ColumnHeader>} ColumnHeaderRow
+ */
+
+/**
+ * A table.
+ * Default constructor
+ * @param {string} caption
+ * @param {Any[][]} data
+ * @param {string[]} row_headers
+ * @param {ColumnHeaderRow[]} column_headers
+ */
 export class Table {
     constructor(caption, data, row_headers, column_headers) {
         this.caption = caption;
@@ -30,6 +50,13 @@ export class Table {
     }
     toString() { return this[Symbol.toPrimitive](); }
 
+    /**
+     * Construct a new table from a given format string.
+     * @param {string} format
+     * @param {Object} options
+     * @property {string|null} caption
+     * @returns {Table}
+     */
     static from_format(format, { caption = null } = {}) {
         if (typeof format !== "string") {
             throw new TypeError("Table.from_format(format): format must be a string");
@@ -44,6 +71,10 @@ export class Table {
         return new Table(caption, data, row_headers, column_headers);
     }
 
+    /**
+     * Is the table empty?
+     * @returns {Boolean}
+     */
     is_empty() { return this.data.is_empty(); }
     is_not_empty() { return this.data.is_not_empty(); }
 

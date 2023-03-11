@@ -1,23 +1,25 @@
 {
-  "name": "@giellatekno/tablelib",
-  "version": "0.0.2",
-  "description": "Data tables supporting parsing from ascii format, and removal of empty rows and columns",
-  "main": "./src/index.mjs",
-  "type": "module",
-  "scripts": {
-    "test": "tap -Rspec"
-  },
-  "exports": {
-      ".": {
-          "node": {
-              "import": "./src/index.mjs"
-          },
-          "browser": "./src/index.mjs"
-      }
-  },
-  "author": "Anders Lorentsen <anders.lorentsen@gmail.com>",
-  "license": "ISC",
-  "devDependencies": {
-    "tap": "^16.3.4"
-  }
+    "name": "@giellatekno/tablelib",
+    "version": "0.0.2",
+    "description": "Data tables supporting parsing from ascii format, and removal of empty rows and columns",
+    "main": "./src/index.js",
+    "type": "module",
+    "scripts": {
+        "test": "tap -Rspec",
+        "gendoc": "./generate_reference_docs.sh"
+    },
+    "exports": {
+        ".": {
+            "node": {
+                "import": "./src/index.mjs"
+            },
+            "browser": "./src/index.mjs"
+        }
+    },
+    "author": "Anders Lorentsen <anders.lorentsen@gmail.com>",
+    "license": "ISC",
+    "devDependencies": {
+        "jsdoc-to-markdown": "^8.0.0",
+        "tap": "^16.3.4"
+    }
 }

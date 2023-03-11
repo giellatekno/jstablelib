@@ -12,6 +12,11 @@ import {
     _typeof,
 } from "./utils.mjs";
 
+/**
+ * Thrown when trying to access a field that is out of bounds
+ * @class
+ * @extends Error
+ */
 export class OutOfBoundsError extends Error {
     constructor(msg, ...args) {
         super(msg, ...args);
@@ -22,17 +27,48 @@ export class OutOfBoundsError extends Error {
 Array.prototype.max = function() { return max(this); }
 Array.prototype.max_or = function (value) { return max_or(this, value); }
 
+/**
+ * An entry in a field of `Matrix`. Every field in a [Matrix]{@link Matrix}
+ * has its value wrapped in one of these.
+ */
 export class Entry {
     #value;
     constructor(value) { this.#value = arguments.length === 0 ? Empty : value; }
+
+    /**
+     * Is the entry empty?
+     * @returns {Boolean}
+     */
     is_empty() { return this.#value === Empty; }
+
+    /**
+     * Does the entry have a value?
+     * @returns {Boolean}
+     */
     is_not_empty() { return !this.is_empty(); }
     get value() { return this.#value; }
     set value(value) { this.#value = value; }
+
+    /**
+     * Clear out the stored value. The Entry is now empty.
+     */
     clear() { this.#value = Empty; }
 
-    // these two are sort of "Rust-ic", I have yet to make up my mind on them
+    /**
+     * If the Entry is empty, make it store `value`, otherwise, do nothing.
+     * @returns {this}
+     */
     or_insert(value) { if (this.is_empty()) this.#value = value; return this; }
+
+    /**
+     * If the Entry contains a value, modify it by calling `fn` with the
+     * contained value as it's argument, and save the return value as the
+     * inner value of the Entry. If the Entry is empty, do nothing.
+     * @example
+     *   const e = new Entry(1);
+     *   e.and_modify(value => value + 1);
+     *   console.assert(e.value === 2);
+     */
     and_modify(fn) { if (this.is_not_empty()) this.#value = fn(this.#value); return this; }
 
     [Symbol.toPrimitive]() { return this.is_empty() ? "Entry<(empty)>" : this.#value; }
@@ -40,6 +76,9 @@ export class Entry {
     toJSON() { return this.is_empty() ? "null" : JSON.stringify(this.#value); }
 }
 
+/**
+ * A 2 dimensional matrix.
+ */
 export class Matrix {
     #data;
     #width;
@@ -155,6 +194,10 @@ export class Matrix {
         this.#width = this.#data[0].length;
     }
 
+    /**
+     * Transpose of the matrix.
+     * @returns {Matrix} the transposed matrix
+     */
     transpose() {
         const n = new Matrix(this.#width, this.#height);
         for (let y = 0; y < this.#height; y++) {
@@ -220,6 +263,10 @@ export class Matrix {
         return new_matrix;
     }
 
+    /**
+     * Returns a new Matrix from this one, where all the empty rows and
+     * columns have been removed.
+     */
     without_empty_rows_and_columns() {
         const entries = [...this.entries()].map(([[y, x], _value]) => [y, x]);
         const rows = [...new Set(entries.map(([y, x]) => y))].sort(numerically);
