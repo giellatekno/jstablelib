@@ -54,3 +54,10 @@ t.test("without_empty_rows_and_columns()", AUTOEND, t => {
     ];
     t.strictSame(m_without.as_array(), expected, "stripped new matrix looks right");
 });
+
+t.test("slice()", AUTOEND, t => {
+    t.test("slice([], []) returns 0-by-0 matrix", AUTOEND, t => {
+        const m = Matrix.from_data([ ["a", "b"], ["c", "d"] ]);
+        t.strictSame(1, 1);
+    });
+});

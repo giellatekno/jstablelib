@@ -1,3 +1,5 @@
+/** @module matrix */
+
 import {
     ValueError,
     Empty,
@@ -27,54 +29,6 @@ export class OutOfBoundsError extends Error {
 Array.prototype.max = function() { return max(this); }
 Array.prototype.max_or = function (value) { return max_or(this, value); }
 
-/**
- * An entry in a field of `Matrix`. Every field in a [Matrix]{@link Matrix}
- * has its value wrapped in one of these.
- */
-export class Entry {
-    #value;
-    constructor(value) { this.#value = arguments.length === 0 ? Empty : value; }
-
-    /**
-     * Is the entry empty?
-     * @returns {Boolean}
-     */
-    is_empty() { return this.#value === Empty; }
-
-    /**
-     * Does the entry have a value?
-     * @returns {Boolean}
-     */
-    is_not_empty() { return !this.is_empty(); }
-    get value() { return this.#value; }
-    set value(value) { this.#value = value; }
-
-    /**
-     * Clear out the stored value. The Entry is now empty.
-     */
-    clear() { this.#value = Empty; }
-
-    /**
-     * If the Entry is empty, make it store `value`, otherwise, do nothing.
-     * @returns {this}
-     */
-    or_insert(value) { if (this.is_empty()) this.#value = value; return this; }
-
-    /**
-     * If the Entry contains a value, modify it by calling `fn` with the
-     * contained value as it's argument, and save the return value as the
-     * inner value of the Entry. If the Entry is empty, do nothing.
-     * @example
-     *   const e = new Entry(1);
-     *   e.and_modify(value => value + 1);
-     *   console.assert(e.value === 2);
-     */
-    and_modify(fn) { if (this.is_not_empty()) this.#value = fn(this.#value); return this; }
-
-    [Symbol.toPrimitive]() { return this.is_empty() ? "Entry<(empty)>" : this.#value; }
-    toString() { return this.is_empty() ? "Entry<(empty)>" : String(this.#value); }
-    toJSON() { return this.is_empty() ? "null" : JSON.stringify(this.#value); }
-}
 
 /**
  * A 2 dimensional matrix.
@@ -84,12 +38,22 @@ export class Matrix {
     #width;
     #height;
 
+    /**
+     * Construct a new Matrix with `height` rows, and `width` columns.
+     * If `opts.fill` is not given, all fields will be empty.
+     * If `opts.fill` is given, it can be either a static value, or a function.
+     * @param height {number|null} - number of rows
+     * @param width {number|null} - number of columns
+     * @param opts {Object}
+     * @param [opts.fill] {Any} - If given, fill every field with this value
+     */
+    constructor(height, width, opts = {}) {
     // opts = {
     //   fill: static value to fill with, or function that takes (x, y) and returns a value
     //   data: pre-filled array of arrays of data, all rows must have the same amount of columns
     // }
-    constructor(height, width, opts = {}) {
         if ("data" in opts) {
+            console.assert(False, "opts.data cannot be set");
             this.set_raw_data(opts.data);
             return;
         }
@@ -117,13 +81,21 @@ export class Matrix {
         }
     }
 
-    static from_data(data) {
+    /**
+     * Construct a new Matrix from a 2-dimensional array of data.
+     * @param data {Array<Array<Any>>} - the data
+     * @param opts {Object}
+     * @param [opts.]
+     */
+    static from_data(data, opts) {
         if (!Array.isArray(data)) {
             throw new TypeError("Matrix.from_data(data): data must be an array");
         }
 
         try {
-            return new Matrix(null, null, { data });
+            const m = new Matrix();
+            m.set_raw_data(data, opts);
+            return m;
         } catch (e) {
             if (e instanceof ValueError) {
                 throw new ValueError("Matrix.from_data(data): malformed format of given 'data'", { cause: e });
@@ -139,6 +111,9 @@ export class Matrix {
     set(y, x, value) { this.#boundcheck(y, x, "set"); this.#data[y][x] = new Entry(value); }
     get(y, x) { this.#boundcheck(y, x, "get"); return this.#data[y][x]; }
 
+    /*
+     * A `Matrix` is empty if all fields are Empty
+     */
     is_empty() {
         for (const entry of this.entries()) {
             // on first entry, we know it's not empty
@@ -162,7 +137,12 @@ export class Matrix {
     get width() { return this.#width; }
     get height() { return this.#height; }
 
-    set_raw_data(data) {
+    /**
+     * overwrite the inner data with `data`
+     * @param options {Object}
+     * @param [options.empty_value] {Any} - if given, treat this value as empty
+     */
+    set_raw_data(data, opts) {
         if (!Array.isArray(data)) throw new TypeError("Table.set_raw_data(data): data must be an array");
 
         if (data.length === 0) {
@@ -173,7 +153,6 @@ export class Matrix {
         }
 
         const width = data[0].length;
-        console.log("set_raw_data():", width);
 
         for (let y = 0; y < data.length; y++) {
             const subarray = data[y];
@@ -187,7 +166,14 @@ export class Matrix {
         }
 
         // wrap every data entry in Entry
-        data = data.map(lines => lines.map(entry => new Entry(entry)));
+        if ("empty_value" in opts) {
+            const ev = opts.empty_value;
+            data = data.map(lines => lines.map(value => 
+                value === ev ? new Entry() : new Entry(value)
+            ));
+        } else {
+            data = data.map(lines => lines.map(value => new Entry(value)));
+        }
 
         this.#data = data;
         this.#height = this.#data.length;
@@ -208,6 +194,10 @@ export class Matrix {
         return n;
     }
 
+    /*
+     * A string representation of the matrix, rows on their own line,
+     * aligned into columns that are separated visually by "|".
+     */
     as_console_str({ empty_indicator = "-" } = {}) {
         const lines = [];
         const replace_empty = typeof empty_indicator === "string";
@@ -254,6 +244,9 @@ export class Matrix {
 
         const new_matrix = new Matrix(len(rows), len(columns));
 
+        for (const [[y, x], value] of this.entries()) {
+        }
+
         for (let [next_y, y] of enumerate(rows)) {
             for (let [next_x, x] of enumerate(columns)) {
                 new_matrix.set(next_y, next_x, this.get(y, x).value);
@@ -263,7 +256,7 @@ export class Matrix {
         return new_matrix;
     }
 
-    /**
+    /*
      * Returns a new Matrix from this one, where all the empty rows and
      * columns have been removed.
      */
