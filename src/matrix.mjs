@@ -14,6 +14,7 @@ import {
     _typeof,
 } from "./utils.mjs";
 
+import { Entry } from "./entry.mjs";
 /**
  * Thrown when trying to access a field that is out of bounds
  * @class
@@ -143,6 +144,8 @@ export class Matrix {
      * @param [options.empty_value] {Any} - if given, treat this value as empty
      */
     set_raw_data(data, opts) {
+        if (!opts) opts = {};
+
         if (!Array.isArray(data)) throw new TypeError("Table.set_raw_data(data): data must be an array");
 
         if (data.length === 0) {
